@@ -1,30 +1,32 @@
+# models.py : DB 테이블 구조를 정의한 파일.
+
 from datetime import datetime
 from sqlalchemy import Column, Integer, Float, String, DateTime, BigInteger
 from database import Base
 
-
+# 진단할 때마다 기록을 계속 쌓는 테이블. 에이전트가 5분마다 데이터를 보낼때마다 여기에 이력이 쌓임.
 class DiagnosisLog(Base):
     """진단할 때마다 결과를 누적 저장 — 기존 CSV 역할"""
     __tablename__ = "diagnosis_log"
 
-    id              = Column(Integer, primary_key=True, index=True)
-    timestamp       = Column(DateTime, default=datetime.now)
-    serial          = Column(String, index=True)
-    device          = Column(String)
-    model           = Column(String)
-    capacity_bytes  = Column(BigInteger)
-    smart_5_raw     = Column(Integer, default=0)
-    smart_9_raw     = Column(Integer, default=0)
-    smart_187_raw   = Column(Integer, default=0)
-    smart_188_raw   = Column(Integer, default=0)
-    smart_194_raw   = Column(Integer, default=0)
-    smart_197_raw   = Column(Integer, default=0)
-    smart_198_raw   = Column(Integer, default=0)
-    smart_199_raw   = Column(Integer, default=0)
-    ml_probability  = Column(Float)
-    ml_level        = Column(String)
-    rule_level      = Column(String)
-    final_level     = Column(String)
+    id              = Column(Integer, primary_key=True, index=True) # PK
+    timestamp       = Column(DateTime, default=datetime.now) # 진단 시각
+    serial          = Column(String, index=True) # 시리얼
+    device          = Column(String) # 디바이스
+    model           = Column(String) # 모델명
+    capacity_bytes  = Column(BigInteger) # 용량
+    smart_5_raw     = Column(Integer, default=0) # SMART 값
+    smart_9_raw     = Column(Integer, default=0) # SMART 값
+    smart_187_raw   = Column(Integer, default=0) # SMART 값
+    smart_188_raw   = Column(Integer, default=0) # SMART 값
+    smart_194_raw   = Column(Integer, default=0) # SMART 값
+    smart_197_raw   = Column(Integer, default=0) # SMART 값
+    smart_198_raw   = Column(Integer, default=0) # SMART 값
+    smart_199_raw   = Column(Integer, default=0) # SMART 값
+    ml_probability  = Column(Float) # ML 확률
+    ml_level        = Column(String) # ML 등급
+    rule_level      = Column(String) # 규칙 등급
+    final_level     = Column(String) # 최종 산출 등급
 
 
 class Disk(Base):

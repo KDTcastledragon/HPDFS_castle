@@ -6,8 +6,8 @@
 2. agent.py
 → 2-1. if __name__ == "__main__"
 → 2-1. collect_and_send()
-→ 2-1. scan_devices()
-→ 2-1. extract_features()
+→ 2-1. smart_collector.py/scan_devices()
+→ 2-1. smart_collector.py/extract_features()
 → 2-1. requests.post()
 
 3. smart_collector.py

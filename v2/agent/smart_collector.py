@@ -1,4 +1,4 @@
-# smart_collector.py : SMART 정보 수집 전담 파일.
+# smart_collector.py : SMART 정보 수집 '전담' 파일.
 
 from __future__ import annotations
 
@@ -60,15 +60,16 @@ def _run(cmd: list[str]) -> tuple[int, str, str]:
     r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="ignore")
     return r.returncode, r.stdout, r.stderr
 
-# 값을 안전하게 숫자로 바꿔주는 함수야. 왜 필요하냐면 smartctl 결과에 값이 없거나 이상한 문자열이 올 수 있어.
-# 예를 들어: None , "" , "abc" , ... 이런 걸 그냥 int()로 바꾸면 에러가 나. 그래서 정상 숫자면 int로 변환. 이상하면 기본값 0 반환
+# 값을 안전하게 숫자(int)로 바꿔주는 함수야. 왜 필요하냐? smartctl 결과에 값이 없거나 이상한 문자열이 올 수 있다.
+# e.g.) None , "" , "abc" , ... --> 이런 걸 그냥 int()로 바꾸면 에러남. 그래서 정상 숫자면 int로 변환. 이상하면 기본값 0 반환
 def _safe_int(value: Any, default: int = 0) -> int:
     try:
         return int(value) if value is not None else default
     except Exception:
         return default
 
-# 온도 값은 디스크마다 표현 방식이 다를 수 있어. 그래서, 온도에서 숫자만 잘 뽑는 역할을 해.
+# 온도 값은 디스크마다 표현 방식이 다를 수 있다. 그래서, 온도에서 숫자만 잘 뽑는 역할을 함.
+# e.g.) "36 (Min/Max 20/50)" --> 이런식으로 문자열로 줄 수 있다. 그래서, "36 Celsius" → 36 추출.
 def _parse_temperature(raw: dict) -> int:
     s = str(raw.get("string", "")).strip()
     m = re.search(r"-?\d+", s)
@@ -80,7 +81,8 @@ def _parse_temperature(raw: dict) -> int:
     low = v & 0xFF
     return low if 0 <= low <= 120 else 0
 
-
+# 중첩된 JSON에서 값을 안전하게 꺼내는 함수. 있으면 꺼내고, 없으면 default를 반환해주는 안전장치.
+# e.g.) {"user_capacity": {"bytes": 4000} } -> bytes 꺼내려고 함. -> data["user_capacity"]["bytes"] -> user_capacity없으면 에러남.
 def _get_nested(data: dict, path: list[str], default=None):
     cur = data
     for key in path:
@@ -154,3 +156,7 @@ def extract_features(device_args: list[str]) -> pd.DataFrame:
         row["smart_9_raw"] = _safe_int(hours)
 
     return pd.DataFrame([row], columns=FEATURES)
+# row = 디스크 1개의 정보 묶음 , DataFrame = 표 형태 데이터
+# serial | model | capacity_bytes | smart_5_raw | smart_9_raw | ...
+# ABC123 | ST4000DM000 | 4000787030016 | 12 | 28400 | ...
+# 이 표 1줄이 agent.py로 돌아감.

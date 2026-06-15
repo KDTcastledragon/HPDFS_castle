@@ -1,4 +1,4 @@
-# agent.py : 수집 담당 파일
+# agent.py : 수집 및 전송 담당 파일
 
 # <참고>
 # start_agent.bat : 현재 폴더에서 agent.py를 Python으로 실행해라
@@ -32,7 +32,8 @@ def collect_and_send():
         device_str = " ".join(device)
         try:
             df = extract_features(device) # 각 디스크마다 이 함수가 호출된다. 제일 중요한 함수임.
-            row = df.iloc[0].to_dict()
+            row = df.iloc[0].to_dict() # DataFrame 표의 첫 번째 줄을 꺼내서, Python dict 형태로 바꾼다. dict는 JavaScript의 object, Java의 Map같은 거임.
+            # payload 조립. 서버로 보낼 JSON Data임. 서버에게 보낼 검사 요청서임.
             payload = {
                 "serial":         str(row.get("serial", "UNKNOWN")),
                 "device":         device_str,
@@ -49,7 +50,8 @@ def collect_and_send():
             }
 
             res = requests.post(
-                f"{API_URL}/api/diagnose",
+                f"{API_URL}/api/diagnose", # === http://localhost/api/diagnose
+                # 실제 흐름은, http://localhost/api/diagnose -> nginx.conf -> FastAPI 이다.
                 json=payload,
                 timeout=REQUEST_TIMEOUT,
             )

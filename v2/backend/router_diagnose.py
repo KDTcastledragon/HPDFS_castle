@@ -1,3 +1,5 @@
+# router_diagnose.py : 진단 요청을 받는 파일.
+
 from datetime import datetime
 from typing import Any
 
@@ -12,7 +14,7 @@ from predictor import FEATURES, predict
 
 router = APIRouter()
 
-# 에이전트가 보내는 JSON의 형식을 정의한 거야. DTO느낌.
+# 에이전트가 보내는 JSON의 형식을 정의. Java의 RequestDTO느낌. FastAPI는 agent.py가 보낸 JSON을 SmartData 형태로 받음.
 class SmartData(BaseModel):
     """에이전트가 보내는 SMART 수치"""
     serial:         str   = "UNKNOWN"   # 디스크 고유 시리얼 넘버
@@ -28,7 +30,7 @@ class SmartData(BaseModel):
     smart_198_raw:  int   = 0
     smart_199_raw:  int   = 0
 
-# 이 함수가 /api/diagnose 요청을 실제로 처리해.
+# /api/diagnose 요청을 실제로 처리하는 함수.
 # 1. 에이전트가 보낸 SMART JSON 받기
 # 2. 모델 입력용 DataFrame 만들기
 # 3. predict() 호출해서 예측하기
@@ -36,9 +38,10 @@ class SmartData(BaseModel):
 # 5. 결과 JSON 응답하기
 @router.post("/diagnose")
 def diagnose(request: Request, data: SmartData, db: Session = Depends(get_db)) -> dict[str, Any]:
-    ml_models = request.app.state.ml_models # 모델 꺼내기
+    # 1. 모델 꺼내기
+    ml_models = request.app.state.ml_models 
 
-    # ① SMART 수치 → DataFrame
+    # 2. DataFrame 만들기. 에이전트가 보낸 JSON을 모델이 받을 수 있는 표 형태로 바꿈. 이때 들어가는 컬럼은 predictor.py의 FEATURES.
     df = pd.DataFrame([{
         "model":          data.model,
         "capacity_bytes": data.capacity_bytes,
@@ -51,11 +54,12 @@ def diagnose(request: Request, data: SmartData, db: Session = Depends(get_db)) -
         "smart_198_raw":  data.smart_198_raw,
         "smart_199_raw":  data.smart_199_raw,
     }], columns=FEATURES)
+    # 주의점 : agent.py는 serial도 서버로 보냄. 하지만 모델 예측에는 serial을 쓰지 않음. serial은 DB 저장/디스크 식별용.
 
-    # ② ML 예측
     if "storage" not in ml_models:
         from fastapi import HTTPException
         raise HTTPException(status_code=503, detail="ML 모델이 로드되지 않았습니다. 서버 로그를 확인하세요.")
+    # 3. predict()호출 후, ML 예측.
     result = predict(df, ml_models["storage"])
 
     is_manual = data.serial == "MANUAL"

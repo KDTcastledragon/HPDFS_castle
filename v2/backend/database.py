@@ -1,3 +1,5 @@
+# database.py : DB 연결 담당 파일.
+
 import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
@@ -14,7 +16,9 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-
+# API 요청이 들어왔을 때 DB 연결을 하나 빌려주는 함수.
+# FastAPI에서는 Depends(get_db)라고 쓰면 이 함수가 실행됨.
+# router_diagnose.py의 diagnose()의 db: Session = Depends(get_db) === diagnose()가 실행될 때 DB 연결도 같이 받아온다.
 def get_db():
     db = SessionLocal()
     try:
