@@ -1,3 +1,5 @@
+# router_disks.py : 대시보드가 조회하는 API 모음 파일.
+
 from datetime import datetime
 from typing import Any
 
@@ -28,7 +30,8 @@ def demo_disks() -> list[dict]:
         {"serial": "ZG22H9XY", "model": "ST4000DM000",            "capacity_bytes": 4000000000000, "final_level": "정상", "risk":  3.0, "action_status": "미확인"},
     ]
 
-
+# 전체 디스크 최신 상태 목록 조회 API. 즉, Disk 테이블에서 데이터를 가져옴. 주소: GET /api/disks
+# 대시보드 첫 화면의 전체 디스크 목록은 이 API를 통해 나옴.
 @router.get("/disks")
 def get_disks(db: Session = Depends(get_db)) -> list[dict[str, Any]]:
     """전체 디스크 현재 상태 목록 조회"""
@@ -46,7 +49,9 @@ def get_disks(db: Session = Depends(get_db)) -> list[dict[str, Any]]:
         for d in disks
     ]
 
-
+# 특정 디스크의 상세 정보와 최근 진단 이력 조회 API. 크게 두 개의 테이블을 본다. 주소 : GET /api/disks/{serial}
+# 1)Disk : 최신 상태. 2)DiagnosisLog :최근 30개 진단 이력.
+# 그래서 디스크 상세 화면에서 과거 이력이 보이는 거임.
 @router.get("/disks/{serial}")
 def get_disk_history(serial: str, db: Session = Depends(get_db)) -> dict[str, Any]:
     """특정 디스크 진단 이력 조회"""
@@ -85,7 +90,8 @@ def get_disk_history(serial: str, db: Session = Depends(get_db)) -> dict[str, An
         ],
     }
 
-
+# 조치 상태 변경 API. 상태는 3가지만 허용 : 미확인,확인됨,조치완료.  주소 : PATCH /api/disks/{serial}/status 
+# 대시보드에서 관리자가 “이 디스크 확인했다” 같은 표시를 할 때 쓰는 API이다.
 @router.patch("/disks/{serial}/status")
 def update_status(serial: str, body: StatusUpdate, db: Session = Depends(get_db)) -> dict[str, str]:
     """F-08 조치 상태 변경 — 미확인 / 확인됨 / 조치완료"""
@@ -101,7 +107,7 @@ def update_status(serial: str, body: StatusUpdate, db: Session = Depends(get_db)
     db.commit()
     return {"serial": serial, "action_status": body.action_status}
 
-
+# 데모 데이터가 들어가 있는지 확인하는 API
 @router.get("/demo")
 def demo_status(db: Session = Depends(get_db)) -> dict[str, Any]:
     """데모 데이터 활성 여부 확인"""
@@ -109,7 +115,7 @@ def demo_status(db: Session = Depends(get_db)) -> dict[str, Any]:
     count = db.query(Disk).filter(Disk.serial.in_(demo_serials)).count()
     return {"active": count > 0}
 
-
+# 발표용 더미 디스크 데이터 추가하는 API
 @router.post("/demo")
 def inject_demo(db: Session = Depends(get_db)) -> dict[str, Any]:
     """발표용 더미 데이터 DB에 주입"""
@@ -129,6 +135,7 @@ def inject_demo(db: Session = Depends(get_db)) -> dict[str, Any]:
     return {"message": f"더미 디스크 {len(demo_disks())}개 주입 완료"}
 
 
+# 발표용 더미 디스크 데이터 삭제하는 API
 @router.delete("/demo")
 def clear_demo(db: Session = Depends(get_db)) -> dict[str, Any]:
     """발표용 더미 데이터 DB에서 삭제"""

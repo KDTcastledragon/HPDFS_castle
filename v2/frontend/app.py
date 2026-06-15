@@ -1,3 +1,7 @@
+# app.py : 사용자가 보는 Streamlit 대시보드. React로 치면, index.html + App.jsx + API 호출 코드가 합쳐진 느낌.
+# 이 파일은 직접 디스크를 읽지 않음. smartctl을 실행하지 않음. DB를 직접 읽지도 않음. 
+# 오직, FastAPI API를 호출해서 데이터를 가져옴.
+
 from __future__ import annotations
 
 import os
@@ -290,6 +294,8 @@ st.markdown(CSS, unsafe_allow_html=True)
 # =========================================================
 # API 호출 함수
 # =========================================================
+
+# app.py의 get_disks() → FastAPI /api/disks → router_disks.py의 get_disks() → Disk 테이블 조회 → 결과 반환 → app.py가 화면에 표시
 def get_disks() -> list[dict[str, Any]]:
     try:
         res = requests.get(f"{API_URL}/api/disks", timeout=5)
@@ -303,6 +309,7 @@ def get_disks() -> list[dict[str, Any]]:
         return []
 
 
+# get_disk_history()와 연결됨. 디스크 상세 화면에서 사용됨.
 def get_disk_detail(serial: str) -> dict[str, Any] | None:
     try:
         res = requests.get(f"{API_URL}/api/disks/{serial}", timeout=5)
@@ -313,6 +320,10 @@ def get_disk_detail(serial: str) -> dict[str, Any] | None:
         return None
 
 
+# 수동진단에서 사용됨. 사용자가 SMART 값을 직접 입력하고 버튼을 누르면, POST /api/diagnose 요청. 실제 에이전트가 보내는 API와 같은 API를 사용.
+# 자동진단 : agent.py가 payload 생성.
+# 수동진단 : app.py가 사용자의 입력값으로 payload 생성.
+# 둘 다 최종적으로는 router_diagnose.py의 diagnose()로 들어감.
 def diagnose_manual(payload: dict) -> dict[str, Any] | None:
     try:
         res = requests.post(f"{API_URL}/api/diagnose", json=payload, timeout=10)
@@ -722,6 +733,7 @@ render_header()
 if "demo_active" not in st.session_state:
     st.session_state.demo_active = get_demo_status()
 
+# 사이드바 메뉴
 with st.sidebar:
     st.title("PDFS")
     page = st.radio("화면", ["대시보드", "자동진단", "수동진단", "디스크 상세", "컬럼 설명"])

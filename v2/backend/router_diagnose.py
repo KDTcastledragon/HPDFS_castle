@@ -64,7 +64,7 @@ def diagnose(request: Request, data: SmartData, db: Session = Depends(get_db)) -
 
     is_manual = data.serial == "MANUAL"
 
-    # ③ diagnosis_log 저장 (수동진단 제외)
+    # DB에 diagnosis_log 진단 이력 저장 (수동진단 제외)
     if not is_manual:
         log = DiagnosisLog(
             timestamp      = datetime.now(),
@@ -88,7 +88,11 @@ def diagnose(request: Request, data: SmartData, db: Session = Depends(get_db)) -
         db.add(log)
 
         # ④ disks 테이블 최신 상태 업데이트 (serial 기준)
+
+        # 1. 이 serial을 가진 디스크가 이미 DB에 있나?
         disk = db.query(Disk).filter(Disk.serial == data.serial).first()
+
+        # 2. 있으면 update : 기존 디스크 최신 상태 갱신
         if disk:
             disk.device        = data.device
             disk.model         = data.model
@@ -96,6 +100,8 @@ def diagnose(request: Request, data: SmartData, db: Session = Depends(get_db)) -
             disk.final_level   = result["final"]
             disk.risk          = round(result["prob"] * 100, 2)
             disk.last_updated  = datetime.now()
+
+        # 3. 없으면 insert: 새 디스크로 추가
         else:
             db.add(Disk(
                 serial         = data.serial,
@@ -108,9 +114,10 @@ def diagnose(request: Request, data: SmartData, db: Session = Depends(get_db)) -
                 last_updated   = datetime.now(),
             ))
 
-        db.commit()
+        db.commit() # 이걸 해야 실제 DB에 저장됨.
 
-    # ⑤ 예측 결과 응답
+    # 예측 결과를 에이전트에게 응답 : DB 저장 후 diagnose()는 결과를 JSON으로 돌려줌.
+    # 이 응답은 다시 agent.py로 돌아감. agent.py는 이 응답을 받아서 콘솔에 로그를 찍음.
     return {
         "serial":      data.serial,
         "device":      data.device,

@@ -29,6 +29,8 @@ class DiagnosisLog(Base):
     final_level     = Column(String) # 최종 산출 등급
 
 
+# 디스크별 최신 상태만 저장하는 테이블.
+# e.g.) 같은 디스크가 10번 진단됨. -> DiagnosisLog에는 10줄 저장. / Disk에는 최신 상태 1줄만 갱신.
 class Disk(Base):
     """디스크별 최신 상태만 보관 — 대시보드 표시용"""
     __tablename__ = "disks"
