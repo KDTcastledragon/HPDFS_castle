@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDFS — 프로젝트 발표</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif; background: #0d1117; color: #e6edf3; overflow: hidden; }
+
+  .slides { width: 100vw; height: 100vh; position: relative; }
+  .slide {
+    display: none;
+    width: 100vw; height: 100vh;
+    padding: 60px 80px;
+    flex-direction: column;
+    justify-content: center;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.45s ease, transform 0.45s ease;
+  }
+  .slide.active {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .slide.enter {
+    display: flex;
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  /* 공통 */
+  h1 { font-size: 2.8rem; font-weight: 900; margin-bottom: 12px; }
+  h2 { font-size: 2rem; font-weight: 800; margin-bottom: 28px; color: #58a6ff; }
+  h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 14px; color: #e6edf3; }
+  p  { font-size: 1.05rem; color: #8b949e; line-height: 1.8; }
+  .accent { color: #58a6ff; }
+  .ok     { color: #3fb950; }
+  .warn   { color: #d29922; }
+  .danger { color: #f85149; }
+
+  /* 슬라이드 번호 */
+  .nav {
+    position: fixed; bottom: 28px; right: 40px;
+    font-size: 13px; color: #8b949e;
+  }
+  .progress {
+    position: fixed; bottom: 0; left: 0;
+    height: 3px; background: #58a6ff;
+    transition: width 0.3s;
+  }
+
+  /* 카드 */
+  .card {
+    background: #161b22; border: 1px solid #30363d;
+    border-radius: 12px; padding: 24px 28px;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: #58a6ff;
+    box-shadow: 0 8px 24px rgba(88, 166, 255, 0.12);
+  }
+  .cards { display: grid; gap: 16px; }
+  .cards.col2 { grid-template-columns: 1fr 1fr; }
+  .cards.col3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  /* 표 */
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th { background: #1c2128; color: #8b949e; font-size: 13px; font-weight: 600; padding: 12px 16px; text-align: left; border-bottom: 1px solid #30363d; }
+  td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #21262d; }
+  tr:last-child td { border-bottom: none; }
+
+  /* 아키텍처 박스 */
+  .arch { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .box {
+    background: #161b22; border: 1px solid #30363d;
+    border-radius: 8px; padding: 12px 20px;
+    font-size: 14px; font-weight: 600; text-align: center; min-width: 120px;
+  }
+  .box.blue  { border-color: #58a6ff; color: #58a6ff; }
+  .box.green { border-color: #3fb950; color: #3fb950; }
+  .box.red   { border-color: #f85149; color: #f85149; }
+  .arrow { font-size: 22px; color: #30363d; }
+
+  /* 태그 */
+  .tag {
+    display: inline-block; background: #1c2128;
+    border: 1px solid #30363d; border-radius: 6px;
+    padding: 4px 10px; font-size: 12px; margin: 4px;
+    color: #8b949e;
+  }
+
+  /* 슬라이드 1 — 좌우 분할 */
+  .slide-1 {
+    background: linear-gradient(135deg, #0d1117 60%, #0f1923);
+    flex-direction: row !important;
+    align-items: center;
+    gap: 60px;
+    padding: 50px 80px;
+  }
+  .slide-1 .left  { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .slide-1 .right {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    animation: fadeUp 0.5s ease 0.3s both;
+  }
+  .terminal {
+    width: 100%; background: #010409;
+    border: 1px solid #30363d; border-radius: 12px;
+    overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .terminal-bar {
+    background: #161b22; padding: 10px 16px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid #30363d;
+  }
+  .terminal-bar span {
+    width: 12px; height: 12px; border-radius: 50%;
+  }
+  .terminal-bar .r { background: #f85149; }
+  .terminal-bar .y { background: #d29922; }
+  .terminal-bar .g { background: #3fb950; }
+  .terminal-bar .title { font-size: 12px; color: #8b949e; margin-left: 8px; white-space: nowrap; }
+  .terminal-body { padding: 16px 20px; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; line-height: 1.7; overflow: hidden; }
+  .t-dim    { color: #8b949e; }
+  .t-key    { color: #79c0ff; }
+  .t-str    { color: #a5d6ff; }
+  .t-num    { color: #f2cc60; }
+  .t-ok     { color: #3fb950; }
+  .t-warn   { color: #d29922; }
+  .t-prompt { color: #58a6ff; }
+
+  /* 비교 */
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .compare .side { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 24px; }
+  .compare .side h3 { font-size: 1.1rem; margin-bottom: 16px; }
+  .compare .side ul { list-style: none; }
+  .compare .side ul li { padding: 6px 0; font-size: 14px; color: #8b949e; }
+  .compare .side ul li::before { content: "• "; color: #58a6ff; }
+
+  /* 숫자 강조 */
+  .big-num { font-size: 3.5rem; font-weight: 900; line-height: 1; }
+  .stats { display: flex; gap: 40px; margin-top: 32px; }
+  .stat-item .label { font-size: 13px; color: #8b949e; margin-top: 6px; }
+
+  /* 타이틀 슬라이드 */
+  .title-sub { font-size: 1.1rem; color: #8b949e; margin-bottom: 40px; }
+  .logo-big {
+    width: 60px; height: 60px; border-radius: 14px;
+    background: linear-gradient(135deg, #58a6ff, #1f6feb);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 900; color: #fff; margin-bottom: 24px;
+  }
+
+  /* 등장 애니메이션 */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .slide.active h2       { animation: fadeUp 0.4s ease 0.05s both; }
+  .slide.active h1       { animation: fadeUp 0.4s ease 0.05s both; }
+  .slide.active .cards   { animation: fadeUp 0.4s ease 0.15s both; }
+  .slide.active .compare { animation: fadeUp 0.4s ease 0.15s both; }
+  .slide.active table    { animation: fadeUp 0.4s ease 0.15s both; }
+  .slide.active .arch    { animation: fadeUp 0.4s ease 0.15s both; }
+  .slide.active .steps   { animation: fadeUp 0.4s ease 0.2s both; }
+  .slide.active .stats   { animation: fadeUp 0.4s ease 0.25s both; }
+  .slide.active .title-sub { animation: fadeUp 0.4s ease 0.1s both; }
+  .slide.active p        { animation: fadeUp 0.4s ease 0.15s both; }
+
+  /* 흐름도 */
+  .flow { display: flex; align-items: center; gap: 0; margin-bottom: 28px; }
+  .flow-node {
+    flex: 1; background: #161b22; border: 1px solid #30363d;
+    border-radius: 10px; padding: 14px 12px; text-align: center;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .flow-node:hover { border-color: #58a6ff; box-shadow: 0 4px 16px rgba(88,166,255,0.12); }
+  .flow-node .icon { font-size: 22px; margin-bottom: 6px; }
+  .flow-node .name { font-size: 13px; font-weight: 700; color: #e6edf3; }
+  .flow-node .desc { font-size: 11px; color: #8b949e; margin-top: 3px; }
+  .flow-node.blue  { border-color: #58a6ff55; }
+  .flow-node.green { border-color: #3fb95055; }
+  .flow-node.warn  { border-color: #d2992255; }
+  .flow-arrow { font-size: 18px; color: #30363d; padding: 0 6px; flex-shrink: 0; }
+
+  /* 레이어 아키텍처 */
+  .layer-wrap { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .layer { display: flex; align-items: center; gap: 12px; }
+  .layer-label {
+    width: 90px; font-size: 11px; font-weight: 700; text-align: right;
+    color: #8b949e; flex-shrink: 0; letter-spacing: .4px; text-transform: uppercase;
+  }
+  .layer-nodes { display: flex; align-items: center; gap: 8px; flex: 1; }
+  .layer-node {
+    padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    border: 1px solid; text-align: center;
+  }
+  .layer-node.pc     { background: #1a2332; border-color: #58a6ff55; color: #79c0ff; }
+  .layer-node.server { background: #1e1a32; border-color: #a371f755; color: #c9b1ff; }
+  .layer-node.db     { background: #1a2e1a; border-color: #3fb95055; color: #7ee787; }
+  .layer-node.client { background: #2e2a1a; border-color: #d2992255; color: #f2cc60; }
+  .layer-arrow-down  { font-size: 16px; color: #30363d; text-align: center; }
+  .layer-pipe { font-size: 18px; color: #30363d; padding: 0 4px; }
+
+  /* 단계 리스트 */
+  .steps { display: flex; flex-direction: column; gap: 12px; }
+  .step { display: flex; align-items: center; gap: 16px; }
+  .step-num {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: #1c2128; border: 1px solid #30363d;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #58a6ff; flex-shrink: 0;
+  }
+  .step-text { font-size: 15px; color: #e6edf3; }
+  .step-sub  { font-size: 13px; color: #8b949e; }
+</style>
+</head>
+<body>
+
+<div class="slides">
+
+  <!-- 슬라이드 1: 타이틀 -->
+  <div class="slide slide-1 active">
+    <div class="left">
+      <div class="logo-big">P</div>
+      <h1>PDFS</h1>
+      <p class="title-sub">Predictive Drive Failure System</p>
+      <p style="font-size:1.05rem; color:#e6edf3; line-height:1.9; margin-bottom: 32px;">
+        HDD/SSD의 <span class="accent">SMART 데이터</span>를 수집·분석해<br>
+        고장을 사전에 예측하는 시스템
+      </p>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <span class="tag">Python</span>
+        <span class="tag">FastAPI</span>
+        <span class="tag">PostgreSQL</span>
+        <span class="tag">Streamlit</span>
+        <span class="tag">Docker</span>
+        <span class="tag">Kubernetes</span>
+        <span class="tag">GitHub Actions</span>
+        <span class="tag">GradientBoosting</span>
+      </div>
+    </div>
+    <div class="right">
+      <div class="terminal">
+        <div class="terminal-bar">
+          <span class="r"></span><span class="y"></span><span class="g"></span>
+          <span class="title">POST /api/diagnose &nbsp;&nbsp;—&nbsp;&nbsp; 고장 예측 API</span>
+        </div>
+        <div class="terminal-body">
+<span class="t-dim">$ curl -X POST http://localhost/api/diagnose \</span><br>
+<span class="t-dim">&nbsp;&nbsp;-d '{"serial": "S63BNA0W", "model": "SAMSUNG MZVL2"}'</span><br>
+<br>
+<span class="t-dim">{</span><br>
+&nbsp;&nbsp;<span class="t-key">"serial"</span><span class="t-dim">:</span>      <span class="t-str">"S63BNA0W"</span><span class="t-dim">,</span><br>
+&nbsp;&nbsp;<span class="t-key">"model"</span><span class="t-dim">:</span>       <span class="t-str">"SAMSUNG MZVL2"</span><span class="t-dim">,</span><br>
+&nbsp;&nbsp;<span class="t-key">"ml_level"</span><span class="t-dim">:</span>    <span class="t-ok">"정상"</span><span class="t-dim">,</span><br>
+&nbsp;&nbsp;<span class="t-key">"rule_level"</span><span class="t-dim">:</span>  <span class="t-ok">"정상"</span><span class="t-dim">,</span><br>
+&nbsp;&nbsp;<span class="t-key">"final_level"</span><span class="t-dim">:</span> <span class="t-ok">"정상"</span><span class="t-dim">,</span><br>
+&nbsp;&nbsp;<span class="t-key">"risk"</span><span class="t-dim">:</span>        <span class="t-num">21.0</span><span class="t-dim">,</span><br>
+&nbsp;&nbsp;<span class="t-key">"reasons"</span><span class="t-dim">:</span>     <span class="t-dim">[</span><span class="t-str">"주요 SMART 이상 지표가 크게 감지되지 않았습니다."</span><span class="t-dim">],</span><br>
+&nbsp;&nbsp;<span class="t-key">"actions"</span><span class="t-dim">:</span>     <span class="t-dim">[</span><span class="t-str">"정기 모니터링을 유지하세요."</span><span class="t-dim">]</span><br>
+<span class="t-dim">}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 슬라이드 2: 프로젝트 배경 -->
+  <div class="slide">
+    <h2>프로젝트 배경</h2>
+    <div class="cards col3">
+      <div class="card">
+        <h3>🔴 문제</h3>
+        <p>디스크 고장은 예고 없이 발생.<br>데이터 손실 전에 예측할 수 있는<br>방법이 필요.</p>
+      </div>
+      <div class="card">
+        <h3>💡 해결</h3>
+        <p>디스크가 자체 기록하는<br><span class="accent">SMART 지표</span>를 ML 모델로 분석해<br>고장 확률을 사전에 계산.</p>
+      </div>
+      <div class="card">
+        <h3>🚀 목표</h3>
+        <p>로컬 EXE 도구에서<br>실무형 클라우드 인프라로<br>단계적 전환.</p>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; margin-top:28px; padding-top:24px; border-top:1px solid #30363d;">
+      <div style="flex:1; text-align:center;">
+        <span class="accent" style="font-size:2.2rem; font-weight:900;">8</span>
+        <div style="font-size:13px; color:#8b949e; margin-top:6px;">SMART 입력 지표</div>
+      </div>
+      <div style="width:1px; height:48px; background:#30363d;"></div>
+      <div style="flex:1; text-align:center;">
+        <span class="ok" style="font-size:2.2rem; font-weight:900;">3</span>
+        <div style="font-size:13px; color:#8b949e; margin-top:6px;">예측 등급 (정상 / 주의 / 위험)</div>
+      </div>
+      <div style="width:1px; height:48px; background:#30363d;"></div>
+      <div style="flex:1; text-align:center;">
+        <span class="warn" style="font-size:2.2rem; font-weight:900;">5분</span>
+        <div style="font-size:13px; color:#8b949e; margin-top:6px;">자동 수집 주기</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 슬라이드 3: v1 구조 -->
+  <div class="slide">
+    <h2>v1 — 온프레미스 EXE</h2>
+    <div class="flow">
+      <div class="flow-node">
+        <div class="icon">🖥️</div>
+        <div class="name">사용자 PC</div>
+        <div class="desc">EXE 실행</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node blue">
+        <div class="icon">🔍</div>
+        <div class="name">smartctl</div>
+        <div class="desc">SMART 수집</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node blue">
+        <div class="icon">🤖</div>
+        <div class="name">ML 예측</div>
+        <div class="desc">GradientBoosting</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node warn">
+        <div class="icon">📄</div>
+        <div class="name">CSV 저장</div>
+        <div class="desc">로컬 파일</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node green">
+        <div class="icon">📊</div>
+        <div class="name">Streamlit</div>
+        <div class="desc">로컬 대시보드</div>
+      </div>
+    </div>
+    <div class="compare">
+      <div class="side">
+        <h3 class="ok">✅ 장점</h3>
+        <ul>
+          <li>설치 없이 EXE 하나로 즉시 실행</li>
+          <li>인터넷 연결 불필요</li>
+          <li>빠른 프로토타이핑</li>
+        </ul>
+      </div>
+      <div class="side">
+        <h3 class="danger">❌ 한계</h3>
+        <ul>
+          <li>단일 PC에서만 동작</li>
+          <li>CSV 파일로만 데이터 저장</li>
+          <li>다중 디스크 중앙 모니터링 불가</li>
+          <li>배포·업데이트 수동</li>
+          <li>확장성 없음</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 슬라이드 4: v2 구조 -->
+  <div class="slide">
+    <h2>v2 — 클라우드 인프라</h2>
+    <div class="layer-wrap">
+      <div class="layer">
+        <div class="layer-label" style="color:#79c0ff;">PC</div>
+        <div class="layer-nodes">
+          <div class="layer-node pc">🖥️ 로컬 에이전트<br><span style="font-size:11px;font-weight:400;">5분 주기 SMART 수집</span></div>
+        </div>
+      </div>
+      <div class="layer" style="gap:12px;">
+        <div class="layer-label"></div>
+        <div style="font-size:13px; color:#8b949e;">↓ &nbsp;HTTP POST</div>
+      </div>
+      <div class="layer">
+        <div class="layer-label" style="color:#c9b1ff;">서버</div>
+        <div class="layer-nodes" style="align-items:flex-start;">
+          <div class="layer-node server">🔀 Nginx<br><span style="font-size:11px;font-weight:400;">라우팅 :80</span></div>
+          <div class="layer-pipe" style="padding-top:10px;">→</div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="layer-node server">⚡ FastAPI<br><span style="font-size:11px;font-weight:400;">ML 예측 :8010</span></div>
+              <div class="layer-pipe">↔</div>
+              <div class="layer-node db">🗄️ PostgreSQL<br><span style="font-size:11px;font-weight:400;">데이터 저장</span></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="layer-node server">📊 Streamlit<br><span style="font-size:11px;font-weight:400;">대시보드 :8501</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="layer" style="gap:12px;">
+        <div class="layer-label"></div>
+        <div style="font-size:13px; color:#8b949e;">↑ &nbsp;브라우저 접속</div>
+      </div>
+      <div class="layer">
+        <div class="layer-label" style="color:#f2cc60;">사용자</div>
+        <div class="layer-nodes">
+          <div class="layer-node client">🌐 브라우저<br><span style="font-size:11px;font-weight:400;">http://localhost</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="cards col3">
+      <div class="card">
+        <h3>🐳 Docker</h3>
+        <p>4개 서비스 컨테이너화.<br>어디서든 동일하게 실행.</p>
+      </div>
+      <div class="card">
+        <h3>☸️ Kubernetes</h3>
+        <p>Pod 자동 재시작,<br>무중단 배포, 스케일 관리.</p>
+      </div>
+      <div class="card">
+        <h3>⚡ CI/CD</h3>
+        <p>main push 시 자동 빌드<br>→ Docker Hub 업로드.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 슬라이드 5: 기술 스택 비교 -->
+  <div class="slide">
+    <h2>기술 스택 비교</h2>
+    <div style="display:grid; grid-template-columns:120px 1fr 1fr; gap:0; border:1px solid #30363d; border-radius:12px; overflow:hidden;">
+      <!-- 헤더 -->
+      <div style="background:#1c2128; padding:12px 18px; font-size:12px; font-weight:700; color:#8b949e; text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid #30363d;">영역</div>
+      <div style="background:#1c2128; padding:12px 18px; font-size:13px; font-weight:700; color:#8b949e; border-bottom:1px solid #30363d; border-left:1px solid #30363d;">v1 — 온프레미스</div>
+      <div style="background:#1a2332; padding:12px 18px; font-size:13px; font-weight:700; color:#58a6ff; border-bottom:1px solid #30363d; border-left:1px solid #30363d;">v2 — 클라우드 인프라</div>
+      <!-- 행 -->
+      <div style="padding:13px 18px; font-size:13px; color:#8b949e; border-bottom:1px solid #21262d;">데이터 수집</div>
+      <div style="padding:13px 18px; font-size:13px; color:#484f58; border-bottom:1px solid #21262d; border-left:1px solid #30363d; text-decoration:line-through;">EXE 내장 smartctl</div>
+      <div style="padding:13px 18px; font-size:13px; color:#e6edf3; border-bottom:1px solid #21262d; border-left:1px solid #30363d; background:#0d1620;">🐍 Python 에이전트 (독립 실행)</div>
+
+      <div style="padding:13px 18px; font-size:13px; color:#8b949e; border-bottom:1px solid #21262d;">ML 예측</div>
+      <div style="padding:13px 18px; font-size:13px; color:#484f58; border-bottom:1px solid #21262d; border-left:1px solid #30363d; text-decoration:line-through;">로컬 실행</div>
+      <div style="padding:13px 18px; font-size:13px; color:#e6edf3; border-bottom:1px solid #21262d; border-left:1px solid #30363d; background:#0d1620;">⚡ FastAPI 서버 API</div>
+
+      <div style="padding:13px 18px; font-size:13px; color:#8b949e; border-bottom:1px solid #21262d;">데이터 저장</div>
+      <div style="padding:13px 18px; font-size:13px; color:#484f58; border-bottom:1px solid #21262d; border-left:1px solid #30363d; text-decoration:line-through;">CSV 파일</div>
+      <div style="padding:13px 18px; font-size:13px; color:#e6edf3; border-bottom:1px solid #21262d; border-left:1px solid #30363d; background:#0d1620;">🗄️ PostgreSQL DB</div>
+
+      <div style="padding:13px 18px; font-size:13px; color:#8b949e; border-bottom:1px solid #21262d;">인프라</div>
+      <div style="padding:13px 18px; font-size:13px; color:#484f58; border-bottom:1px solid #21262d; border-left:1px solid #30363d; text-decoration:line-through;">없음</div>
+      <div style="padding:13px 18px; font-size:13px; color:#e6edf3; border-bottom:1px solid #21262d; border-left:1px solid #30363d; background:#0d1620;">🐳 Docker Compose + Kubernetes</div>
+
+      <div style="padding:13px 18px; font-size:13px; color:#8b949e;">CI/CD</div>
+      <div style="padding:13px 18px; font-size:13px; color:#484f58; border-left:1px solid #30363d; text-decoration:line-through;">없음</div>
+      <div style="padding:13px 18px; font-size:13px; color:#e6edf3; border-left:1px solid #30363d; background:#0d1620;">🔄 GitHub Actions + Docker Hub</div>
+    </div>
+  </div>
+
+  <!-- 슬라이드 6: CI/CD 파이프라인 -->
+  <div class="slide">
+    <h2>CI/CD 파이프라인</h2>
+    <div style="margin-bottom: 32px;">
+      <div class="arch">
+        <div class="box blue">GitHub<br>push</div>
+        <div class="arrow">→</div>
+        <div class="box blue">GitHub Actions<br>트리거</div>
+        <div class="arrow">→</div>
+        <div class="box">이미지 빌드<br>backend/frontend/nginx</div>
+        <div class="arrow">→</div>
+        <div class="box green">Docker Hub<br>push</div>
+      </div>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <div class="step-text">main 브랜치에 코드 push</div>
+          <div class="step-sub">개발자가 코드 변경 후 push하면 자동 시작</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <div class="step-text">GitHub Actions — ubuntu 서버에서 Docker 이미지 빌드</div>
+          <div class="step-sub">backend, frontend, nginx 3개 이미지 병렬 빌드</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <div class="step-text">Docker Hub에 latest + git SHA 태그로 push</div>
+          <div class="step-sub">버전 추적 가능, 롤백 가능</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div>
+          <div class="step-text">서버에서 새 이미지 pull → 수동 배포</div>
+          <div class="step-sub">docker pull로 최신 이미지 적용 (서버 자동 배포는 미구현 — 확장 가능)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 슬라이드 7: Kubernetes -->
+  <div class="slide">
+    <h2>Kubernetes 배포 구조</h2>
+    <div class="cards col2" style="margin-bottom: 24px;">
+      <div class="card">
+        <h3>Pod 구성</h3>
+        <table>
+          <tr><td>nginx Pod</td><td class="accent">외부 트래픽 라우팅</td></tr>
+          <tr><td>backend Pod</td><td class="accent">FastAPI + ML 예측</td></tr>
+          <tr><td>frontend Pod</td><td class="accent">Streamlit 대시보드</td></tr>
+          <tr><td>postgres Pod</td><td class="accent">데이터 영구 저장 (PVC)</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3>운영 기능</h3>
+        <ul style="list-style:none;">
+          <li style="padding: 8px 0; font-size:14px; border-bottom: 1px solid #21262d;">
+            <span class="ok">●</span> &nbsp;Pod 자동 재시작 (Deployment)
+          </li>
+          <li style="padding: 8px 0; font-size:14px; border-bottom: 1px solid #21262d;">
+            <span class="ok">●</span> &nbsp;영구 볼륨 (PersistentVolumeClaim)
+          </li>
+          <li style="padding: 8px 0; font-size:14px; border-bottom: 1px solid #21262d;">
+            <span class="ok">●</span> &nbsp;환경변수 ConfigMap / Secret 분리
+          </li>
+          <li style="padding: 8px 0; font-size:14px;">
+            <span class="ok">●</span> &nbsp;LoadBalancer로 외부 노출
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="card" style="background: #0d1117;">
+      <p style="font-size:13px; color:#8b949e;">
+        minikube(로컬 k8s) 환경에서 4개 Pod 모두 Running 확인 완료.
+        실제 클라우드 서버(AWS EKS, GCP GKE) 배포 시 이미지 이름만 Docker Hub 주소로 교체하면 동일 매니페스트 사용 가능.
+      </p>
+    </div>
+  </div>
+
+  <!-- 슬라이드 8: 마무리 -->
+  <div class="slide">
+    <h2>마무리</h2>
+    <div class="cards col2">
+      <div class="card">
+        <h3>구현된 것</h3>
+        <ul style="list-style:none;">
+          <li style="padding:6px 0; font-size:14px;"><span class="ok">✓</span> &nbsp;SMART 기반 ML 고장 예측</li>
+          <li style="padding:6px 0; font-size:14px;"><span class="ok">✓</span> &nbsp;실시간 에이전트 → 서버 데이터 파이프라인</li>
+          <li style="padding:6px 0; font-size:14px;"><span class="ok">✓</span> &nbsp;Docker Compose 컨테이너 운영</li>
+          <li style="padding:6px 0; font-size:14px;"><span class="ok">✓</span> &nbsp;Kubernetes Pod 자동 관리</li>
+          <li style="padding:6px 0; font-size:14px;"><span class="ok">✓</span> &nbsp;GitHub Actions CI/CD 자동화</li>
+          <li style="padding:6px 0; font-size:14px;"><span class="ok">✓</span> &nbsp;보안 (Secret, CORS, .gitignore)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>확장 가능한 것</h3>
+        <ul style="list-style:none;">
+          <li style="padding:6px 0; font-size:14px;"><span class="accent">→</span> &nbsp;실 클라우드 서버 배포 (AWS/GCP)</li>
+          <li style="padding:6px 0; font-size:14px;"><span class="accent">→</span> &nbsp;배터리 / 증상 예측 모델 연동</li>
+          <li style="padding:6px 0; font-size:14px;"><span class="accent">→</span> &nbsp;Prometheus + Grafana 모니터링</li>
+          <li style="padding:6px 0; font-size:14px;"><span class="accent">→</span> &nbsp;사용자 인증 (다중 사용자 지원)</li>
+        </ul>
+      </div>
+    </div>
+    <div style="margin-top: 32px; text-align: center;">
+      <p style="font-size: 1rem; color: #8b949e;">
+        GitHub &nbsp;·&nbsp;
+        <span class="accent">github.com/hhho0coco1-star/HPDFS</span>
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<!-- 진행 표시 -->
+<div class="nav" id="nav">1 / 8</div>
+<div class="progress" id="progress"></div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  let current = 0;
+  let animating = false;
+
+  function show(n) {
+    if (animating) return;
+    const next = (n + slides.length) % slides.length;
+    if (next === current) return;
+    animating = true;
+
+    const cur = slides[current];
+    const nxt = slides[next];
+
+    // 현재 슬라이드 페이드아웃
+    cur.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+    cur.style.opacity = '0';
+    cur.style.transform = 'translateY(-12px)';
+
+    setTimeout(() => {
+      cur.classList.remove('active');
+      cur.style.cssText = '';
+
+      current = next;
+      nxt.classList.add('active');
+      document.getElementById('nav').textContent = `${current + 1} / ${slides.length}`;
+      document.getElementById('progress').style.width = `${((current + 1) / slides.length) * 100}%`;
+
+      setTimeout(() => { animating = false; }, 450);
+    }, 220);
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') show(current + 1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                     show(current - 1);
+  });
+
+  // 터치/클릭
+  let startX = 0;
+  document.addEventListener('touchstart', e => startX = e.touches[0].clientX);
+  document.addEventListener('touchend',   e => {
+    const diff = startX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) show(current + (diff > 0 ? 1 : -1));
+  });
+  document.addEventListener('click', e => {
+    if (e.clientX > window.innerWidth / 2) show(current + 1);
+    else show(current - 1);
+  });
+
+  // 초기 진행바
+  document.getElementById('progress').style.width = `${(1 / slides.length) * 100}%`;
+</script>
+</body>
+</html>

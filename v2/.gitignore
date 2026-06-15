@@ -1,0 +1,33 @@
+# 대용량 원본 데이터 (Backblaze Drive Stats 등) — git에 올리지 않음
+# 날짜별 일일 스냅샷 CSV
+data/20*.csv
+
+# 배포 패키지 (대용량 ZIP, EXE, 압축 해제 폴더)
+data/*.zip
+data/*.exe
+data/*_extracted/
+
+# 모델 학습 산출물 (학습용 대용량 pkl 제외, 서빙용 모델은 포함)
+data/current_storage_input.csv
+*.pkl
+!backend/models/storage_best_model.pkl
+
+# smartctl 바이너리 (Windows 실행 파일)
+tools/
+
+# 파이썬
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# 환경변수 (DB 접속 정보 등 민감 정보)
+.env
+
+
+# OS / 에디터
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+v1/data/*.zip

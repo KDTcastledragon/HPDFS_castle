@@ -1,0 +1,79 @@
+# 파일 및 메소드 흐름 summary
+
+1. start_agent.bat
+→ python agent.py
+
+2. agent.py
+→ 2-1. if __name__ == "__main__"
+→ 2-1. collect_and_send()
+→ 2-1. scan_devices()
+→ 2-1. extract_features()
+→ 2-1. requests.post()
+
+3. smart_collector.py
+→ 3-1. get_smartctl_path()
+→ 3-2. _run()
+→ 3-3. scan_devices()
+→ 3-4. extract_features()
+→ 3-5. _safe_int()
+→ 3-6. _parse_temperature()
+→ 3-7. _get_nested()
+
+4. nginx.conf
+→ location /api/
+→ backend
+
+5. main.py
+→ lifespan()
+→ joblib.load()
+→ Base.metadata.create_all()
+→ app.include_router()
+
+6. router_diagnose.py
+→ SmartData
+→ diagnose()
+
+7. predictor.py
+→ predict()
+→ prob_to_level()
+→ rule_level()
+→ combine_level()
+→ reasons_actions()
+
+8. database.py
+→ get_db()
+
+9. models.py
+→ DiagnosisLog
+→ Disk
+
+10. router_disks.py
+→ get_disks()
+→ get_disk_history()
+→ update_status()
+→ demo_status()
+→ inject_demo()
+→ clear_demo()
+
+11. app.py
+→ get_disks()
+→ get_disk_detail()
+→ diagnose_manual()
+→ get_demo_status()
+→ inject_demo()
+→ clear_demo()
+→ update_action_status()
+→ render_summary()
+→ render_table()
+→ render_detail_page()
+
+에이전트 : PC의 디스크 정보 수집
+
+백엔드 : 받은 데이터로 모델 예측 + DB 저장
+
+프론트 : DB에 저장된 결과를 화면에 표시
+
+<중요한 점>
+smartctl은 서버로 데이터를 보내지 않음. smartctl은 그냥 디스크 정보를 출력만 함.
+agent.py가 smartctl을 실행하고, 그 출력 결과를 읽어서, JSON으로 만들어서, 서버로 보내는 것.
+

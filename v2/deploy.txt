@@ -1,0 +1,52 @@
+# .github/workflows/deploy.yml 임. 충돌때문에 주석처리 및 폴더 삭제. 추후 복구 가능.
+
+# name: Build & Push Docker Images
+
+# on:
+#   push:
+#     branches:
+#       - main
+
+# jobs:
+#   build-and-push:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: 코드 체크아웃
+#         uses: actions/checkout@v4
+
+#       - name: Docker Hub 로그인
+#         uses: docker/login-action@v3
+#         with:
+#           username: ${{ secrets.DOCKER_USERNAME }}
+#           password: ${{ secrets.DOCKER_PASSWORD }}
+
+#       - name: Docker Buildx 설정
+#         uses: docker/setup-buildx-action@v3
+
+#       - name: Backend 이미지 빌드 & Push
+#         uses: docker/build-push-action@v5
+#         with:
+#           context: ./v2/backend
+#           push: true
+#           tags: |
+#             melooong/pdfs-backend:latest
+#             melooong/pdfs-backend:${{ github.sha }}
+
+#       - name: Frontend 이미지 빌드 & Push
+#         uses: docker/build-push-action@v5
+#         with:
+#           context: ./v2/frontend
+#           push: true
+#           tags: |
+#             melooong/pdfs-frontend:latest
+#             melooong/pdfs-frontend:${{ github.sha }}
+
+#       - name: Nginx 이미지 빌드 & Push
+#         uses: docker/build-push-action@v5
+#         with:
+#           context: ./v2/nginx
+#           push: true
+#           tags: |
+#             melooong/pdfs-nginx:latest
+#             melooong/pdfs-nginx:${{ github.sha }}

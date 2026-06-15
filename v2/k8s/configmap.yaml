@@ -1,0 +1,11 @@
+# ConfigMap이란? → 일반 설정값 저장.
+#  DATABASE_URL , DB 이름 , DB 사용자명 , API 주소 , ..값들 설정해줌.
+# 비번같은건 secret에 넣는다.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pdfs-config
+  namespace: pdfs
+data:
+  API_URL: "http://backend:8010"

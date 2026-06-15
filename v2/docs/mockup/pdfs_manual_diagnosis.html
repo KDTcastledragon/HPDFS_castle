@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDFS — 수동진단 (목업)</title>
+<style>
+  :root {
+    --bg: #0d1117; --bg-card: #161b22; --bg-card2: #1c2128; --border: #30363d;
+    --text: #e6edf3; --text-dim: #8b949e; --accent: #58a6ff;
+    --ok: #3fb950; --warn: #d29922; --danger: #f85149;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system,"Segoe UI","Malgun Gothic",sans-serif; font-size: 14px; padding-bottom: 60px; }
+
+  header {
+    position: sticky; top: 0; z-index: 20;
+    height: 54px; padding: 0 28px;
+    background: #010409; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .logo .mark { width: 30px; height: 30px; border-radius: 7px; background: linear-gradient(135deg,var(--accent),#1f6feb); display: grid; place-items: center; font-weight: 800; color: #fff; font-size: 15px; }
+  .logo b { font-size: 17px; letter-spacing: .3px; }
+  .logo span { color: var(--text-dim); font-size: 12px; margin-left: 4px; }
+  nav { position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: stretch; height: 54px; }
+  .nav-tab { display: flex; align-items: center; padding: 0 14px; font-size: 13px; color: var(--text-dim); text-decoration: none; border-bottom: 2px solid transparent; transition: color .15s,border-color .15s; white-space: nowrap; }
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 700; }
+  .live { margin-left: auto; display: flex; align-items: center; gap: 7px; color: var(--text-dim); font-size: 13px; flex-shrink: 0; }
+  .live .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ok); animation: pulse 1.6s infinite; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(63,185,80,.5)} 70%{box-shadow:0 0 0 8px rgba(63,185,80,0)} 100%{box-shadow:0 0 0 0 rgba(63,185,80,0)} }
+
+  main { max-width: 960px; margin: 0 auto; padding: 28px; }
+  .section-title { font-size: 13px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .6px; margin: 28px 0 12px; font-weight: 700; }
+  .section-title:first-child { margin-top: 0; }
+
+  .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 22px 24px; }
+
+  /* 입력 폼 */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; }
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  .field label { font-size: 12px; color: var(--text-dim); font-weight: 600; }
+  .field input[type="text"],
+  .field input[type="number"] {
+    background: var(--bg-card2); border: 1px solid var(--border); border-radius: 7px;
+    color: var(--text); padding: 9px 12px; font-size: 13px; width: 100%;
+  }
+  .field input:focus { outline: none; border-color: var(--accent); }
+  .field .hint { font-size: 11px; color: var(--text-dim); }
+  .field .hint.bad { color: var(--danger); }
+
+  .btn-row { margin-top: 20px; }
+  .btn { border: none; font-weight: 700; padding: 11px 24px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .btn-primary { background: var(--accent); color: #0d1117; }
+  .btn-primary:hover { background: #79b8ff; }
+
+  /* 진단 결과 */
+  .result-box { margin-top: 28px; display: none; }
+  .result-box.show { display: block; }
+
+  .disk-header { background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--danger); border-radius: 10px; padding: 18px 22px; margin-bottom: 14px; }
+  .disk-header .name { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+  .badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+  .badge.danger { background: rgba(248,81,73,.15); color: var(--danger); }
+  .badge.warn { background: rgba(210,153,34,.15); color: var(--warn); }
+  .badge.ok { background: rgba(63,185,80,.15); color: var(--ok); }
+  .disk-meta { display: flex; gap: 24px; margin-top: 10px; flex-wrap: wrap; font-size: 13px; }
+  .disk-meta .k { color: var(--text-dim); }
+  .disk-meta .v { font-weight: 600; margin-left: 5px; }
+
+  .two-col { display: grid; grid-template-columns: 260px 1fr; gap: 14px; }
+  .inner-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+  .inner-card h4 { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 14px; }
+
+  .gauge-wrap { display: flex; flex-direction: column; align-items: center; }
+  .gauge { width: 140px; height: 140px; border-radius: 50%; position: relative; background: conic-gradient(var(--danger) 0 92%, var(--bg-card2) 92% 100%); }
+  .gauge::before { content:''; position: absolute; inset: 16px; border-radius: 50%; background: var(--bg-card); }
+  .gauge .c { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+  .gauge .c .pct { font-size: 32px; font-weight: 800; color: var(--danger); }
+  .gauge .c .lbl { font-size: 11px; color: var(--text-dim); }
+  .gauge-status { margin-top: 12px; font-weight: 700; color: var(--danger); font-size: 14px; }
+
+  .predict .headline { font-size: 17px; font-weight: 700; color: var(--danger); }
+  .predict .desc { color: var(--text-dim); font-size: 13px; margin-top: 8px; line-height: 1.6; }
+  .reason-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .rtag { background: rgba(248,81,73,.1); border: 1px solid rgba(248,81,73,.3); color: var(--danger); font-size: 12px; padding: 5px 10px; border-radius: 7px; }
+  .action-box { margin-top: 14px; background: var(--bg-card2); border-radius: 8px; padding: 12px 14px; font-size: 13px; }
+  .action-box .t { color: var(--text-dim); font-size: 12px; margin-bottom: 5px; }
+
+  .smart-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-top: 14px; }
+  .sc { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .sc .k { font-size: 12px; color: var(--text-dim); }
+  .sc .v { font-size: 22px; font-weight: 800; margin-top: 6px; }
+  .sc.bad { border-color: rgba(248,81,73,.35); } .sc.bad .v { color: var(--danger); }
+
+  .mock-tag { position: fixed; bottom: 14px; right: 14px; background: var(--bg-card2); border: 1px solid var(--border); color: var(--text-dim); font-size: 11px; padding: 6px 12px; border-radius: 20px; }
+  @media (max-width: 720px) { .form-grid,.two-col,.smart-grid { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="mark">P</div><b>PDFS</b><span>Predictive Drive Failure System</span></div>
+  <nav>
+    <a class="nav-tab" href="pdfs_dashboard.html">대시보드</a>
+    <a class="nav-tab" href="pdfs_auto_diagnosis.html">자동진단</a>
+    <a class="nav-tab active" href="pdfs_manual_diagnosis.html">수동진단</a>
+    <a class="nav-tab" href="pdfs_disk_detail.html">디스크 상세</a>
+    <a class="nav-tab" href="pdfs_model_scores.html">모델 성능</a>
+    <a class="nav-tab" href="pdfs_column_desc.html">컬럼 설명</a>
+  </nav>
+  <div class="live"><span class="dot"></span> 실시간 연결됨 · 로컬 SMART 모니터링</div>
+</header>
+
+<main>
+  <div class="section-title">저장장치 수동진단</div>
+
+  <div class="card">
+    <div class="form-grid">
+      <div class="field">
+        <label>모델명</label>
+        <input type="text" value="ST4000DM000">
+      </div>
+      <div class="field">
+        <label>용량 (TB)</label>
+        <input type="number" value="4" step="0.1" min="0.1">
+      </div>
+      <div class="field">
+        <label>재할당섹터 (smart_5_raw)</label>
+        <input type="number" id="s5" value="120" min="0">
+        <span class="hint bad" id="h5">⚠ 100 이상 — 위험 판정</span>
+      </div>
+      <div class="field">
+        <label>가동시간 (smart_9_raw)</label>
+        <input type="number" value="38210" min="0">
+        <span class="hint">단위: 시간(h)</span>
+      </div>
+      <div class="field">
+        <label>에러 (smart_187_raw)</label>
+        <input type="number" id="s187" value="2" min="0">
+        <span class="hint bad" id="h187">⚠ 0 초과 — 위험 판정</span>
+      </div>
+      <div class="field">
+        <label>명령타임아웃 (smart_188_raw)</label>
+        <input type="number" value="0" min="0">
+        <span class="hint">0 초과 시 주의 판정</span>
+      </div>
+      <div class="field">
+        <label>온도 (smart_194_raw)</label>
+        <input type="number" value="36" min="0">
+        <span class="hint">단위: ℃, 50 이상 주의</span>
+      </div>
+      <div class="field">
+        <label>대기섹터 (smart_197_raw)</label>
+        <input type="number" id="s197" value="48" min="0">
+        <span class="hint bad" id="h197">⚠ 0 초과 — 위험 판정</span>
+      </div>
+      <div class="field">
+        <label>정정불가섹터 (smart_198_raw)</label>
+        <input type="number" id="s198" value="32" min="0">
+        <span class="hint bad" id="h198">⚠ 0 초과 — 위험 판정</span>
+      </div>
+      <div class="field">
+        <label>CRC오류 (smart_199_raw)</label>
+        <input type="number" value="0" min="0">
+        <span class="hint">0 초과 시 주의 판정</span>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="runManual()">⚡ 수동 진단</button>
+    </div>
+  </div>
+
+  <!-- 진단 결과 -->
+  <div class="result-box" id="resultBox">
+    <div class="section-title">진단 결과</div>
+
+    <div class="disk-header">
+      <div class="name">MANUAL <span class="badge danger">위험</span></div>
+      <div class="disk-meta">
+        <div><span class="k">모델</span><span class="v">ST4000DM000</span></div>
+        <div><span class="k">용량</span><span class="v">4TB</span></div>
+        <div><span class="k">가동시간</span><span class="v">38,210h</span></div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="inner-card">
+        <h4>고장 위험도</h4>
+        <div class="gauge-wrap">
+          <div class="gauge"><div class="c"><div><div class="pct">92%</div><div class="lbl">위험도</div></div></div></div>
+          <div class="gauge-status">● 위험 (70% 이상)</div>
+        </div>
+      </div>
+      <div class="inner-card predict">
+        <h4>예측 분석</h4>
+        <div class="headline">⚠ 저장장치 위험 상태</div>
+        <div class="desc">머신러닝 모델과 SMART 규칙 기반 판단을 결합한 최종 등급입니다.</div>
+        <div class="reason-tags">
+          <span class="rtag">재할당섹터(5) <b>120</b></span>
+          <span class="rtag">대기섹터(197) <b>48</b></span>
+          <span class="rtag">정정불가섹터(198) <b>32</b></span>
+          <span class="rtag">에러(187) <b>2</b></span>
+        </div>
+        <div class="action-box">
+          <div class="t">권장 조치</div>
+          중요 데이터 즉시 백업 후 디스크 교체를 강하게 권장합니다.
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:20px;">핵심 SMART 현재값</div>
+    <div class="smart-grid">
+      <div class="sc bad"><div class="k">재할당섹터 (5)</div><div class="v">120</div></div>
+      <div class="sc bad"><div class="k">대기섹터 (197)</div><div class="v">48</div></div>
+      <div class="sc bad"><div class="k">정정불가 (198)</div><div class="v">32</div></div>
+      <div class="sc"><div class="k">에러 (187)</div><div class="v">2</div></div>
+      <div class="sc"><div class="k">명령타임아웃 (188)</div><div class="v">0</div></div>
+    </div>
+  </div>
+</main>
+
+<div class="mock-tag">목업 (더미 데이터) · PDFS 수동진단</div>
+
+<script>
+  function runManual() {
+    document.getElementById('resultBox').classList.add('show');
+    document.getElementById('resultBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+</script>
+</body>
+</html>

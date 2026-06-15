@@ -1,0 +1,66 @@
+# 1. PostgreSQL 컨테이너 실행
+# 2. FastAPI backend 컨테이너 실행
+# 3. Streamlit frontend 컨테이너 실행
+# 4. Nginx 컨테이너 실행
+# 5. 이 컨테이너들을 같은 네트워크에 연결
+# 6. 필요한 환경변수 설정
+# 7. DB 저장공간 volume 연결
+
+# docker compose up --build : 이 프로젝트에 필요한 서버 세트를 전부 조립해서 실행해라
+
+services:
+  postgresql:
+    image: postgres:15-alpine # postgres:15-alpine이라는 PostgreSQL Docker 이미지를 가져와서 컨테이너로 실행해라
+    container_name: pdfs_postgres
+    environment:
+      POSTGRES_USER: pdfs
+      POSTGRES_PASSWORD: pdfs1234
+      POSTGRES_DB: pdfs
+    ports:
+      - "5432:5432"
+    volumes:
+      - pdfs_pg_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - pdfs-network
+
+  backend:
+    build: ./backend
+    container_name: pdfs_backend
+    environment:
+      DATABASE_URL: postgresql://pdfs:pdfs1234@postgresql:5432/pdfs
+    depends_on:
+      - postgresql
+    restart: unless-stopped
+    networks:
+      - pdfs-network
+
+  frontend:
+    build: ./frontend
+    container_name: pdfs_frontend
+    environment:
+      API_URL: http://backend:8010
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - pdfs-network
+
+  nginx:
+    build: ./nginx
+    container_name: pdfs_nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - frontend
+    restart: unless-stopped
+    networks:
+      - pdfs-network
+
+networks:
+  pdfs-network:
+    driver: bridge
+
+volumes:
+  pdfs_pg_data:

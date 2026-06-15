@@ -1,0 +1,744 @@
+
+backend 이미지
+= Python + 필요한 패키지 + 백엔드 코드 + 실행 명령어
+
+
+그리고 이 이미지를 실행하면 컨테이너가 됨.
+
+
+이미지 = 실행 가능한 포장 세트
+컨테이너 = 실제로 실행 중인 프로그램
+
+
+비유하면:
+Docker image = 밀키트 박스
+Docker container = 실제로 조리해서 돌아가는 음식
+
+
+---
+
+## 2. PostgreSQL을 설치한 적 없는데 왜 작동하냐?
+
+이게 Docker 덕분이야.
+
+너는 Windows에 PostgreSQL을 직접 설치하지 않았어.  
+근데 `docker-compose.yml`에 이런 설정이 있어.
+
+yaml
+postgresql:
+  image: postgres:15-alpine
+
+
+이 뜻은:
+
+
+postgres:15-alpine이라는 PostgreSQL Docker 이미지를 가져와서
+컨테이너로 실행해라
+
+
+즉 네 컴퓨터에 PostgreSQL 프로그램을 직접 설치한 게 아니라:
+
+
+Docker 컨테이너 안에서 PostgreSQL이 실행 중
+
+
+인 거야.
+
+그래서 네 Windows 입장에서는 PostgreSQL이 설치되어 있지 않아도, Docker 안에는 PostgreSQL이 있음.
+
+구조는 이렇게 봐.
+
+
+Windows
+└── Docker Desktop
+    └── PostgreSQL container
+        └── PostgreSQL 실행 중
+
+
+그래서 프로그램이 작동하는 이유는:
+
+
+docker compose up을 했을 때
+Docker가 PostgreSQL 컨테이너를 자동으로 띄워줬기 때문
+
+
+이야.
+
+---
+
+## 3. Docker Compose는 뭐냐?
+
+Docker가 컨테이너 하나를 실행하는 도구라면,  
+Docker Compose는 **여러 컨테이너를 한 번에 실행하는 도구**야.
+
+너희 프로젝트는 하나만 실행하면 안 되잖아.
+
+
+PostgreSQL
+FastAPI backend
+Streamlit frontend
+Nginx
+
+
+총 4개가 필요해.
+
+이걸 하나씩 직접 실행하면 귀찮아.
+
+powershell
+docker run postgres ...
+docker run backend ...
+docker run frontend ...
+docker run nginx ...
+
+
+이런 식으로 해야 함.
+
+근데 Docker Compose를 쓰면 `docker-compose.yml`에 전체 구성을 적어놓고:
+
+powershell
+docker compose up --build
+
+
+한 방에 실행 가능해.
+
+즉 Docker Compose는:
+
+
+여러 Docker 컨테이너를 한 번에 실행하고 연결해주는 실행 설계서
+
+
+라고 보면 돼.
+
+너희 프로젝트에서는 Docker Compose가 이걸 해줌.
+
+
+1. PostgreSQL 컨테이너 실행
+2. FastAPI backend 컨테이너 실행
+3. Streamlit frontend 컨테이너 실행
+4. Nginx 컨테이너 실행
+5. 이 컨테이너들을 같은 네트워크에 연결
+6. 필요한 환경변수 설정
+7. DB 저장공간 volume 연결
+
+▶ docker compose up --build === 이 프로젝트에 필요한 서버 세트를 전부 조립해서 실행해라
+
+
+---
+
+## 4. Docker Compose는 Docker의 확장 버전이냐?
+
+비슷하게 느껴도 되긴 하는데, 정확히는 **확장 버전이라기보다 여러 Docker 컨테이너를 관리하는 도구**야.
+
+비유하면:
+
+
+Docker
+= 밀키트 하나를 조리하는 도구
+
+Docker Compose
+= 여러 밀키트를 한 번에 조리하고 식탁에 세팅하는 레시피
+
+
+예를 들어:
+
+
+백엔드 하나만 실행
+→ Docker만 써도 됨
+
+백엔드 + 프론트 + DB + nginx 같이 실행
+→ Docker Compose가 편함
+
+
+너희 프로젝트는 여러 서비스가 같이 돌아가야 하니까 Docker Compose를 쓰는 거야.
+
+---
+
+## 5. Kubernetes는 뭐냐?
+
+Kubernetes는 줄여서 **k8s**라고도 해.
+
+한마디로 말하면:
+
+
+여러 서버/컨테이너를 자동으로 운영해주는 컨테이너 관리 시스템
+
+
+Docker Compose가 로컬 개발용 또는 작은 서버용이라면,  
+Kubernetes는 더 큰 운영 환경용이야.
+
+Docker Compose는 보통 이런 느낌이야.
+
+
+내 컴퓨터 또는 서버 1대에서
+컨테이너 여러 개 실행
+
+
+Kubernetes는 이런 느낌이야.
+
+
+서버 여러 대 위에서
+컨테이너 수십 개, 수백 개를 관리
+죽으면 다시 살리고
+부하가 많으면 늘리고
+업데이트도 순차적으로 하고
+상태도 감시함
+
+
+즉 Kubernetes는 단순 실행 도구가 아니라:
+
+
+운영 자동화 시스템
+
+
+이야.
+
+---
+
+## 6. Kubernetes는 왜 쓰냐?
+
+실무에서는 서버가 그냥 “켜져 있음”만으로 부족해.
+
+예를 들어 백엔드가 갑자기 죽으면?
+
+Docker Compose에서는 사람이 봐야 해.
+
+
+어? backend 죽었네
+다시 docker compose up 해야겠다
+
+
+근데 Kubernetes는 자동으로 감지하고 다시 실행해.
+
+
+backend pod 죽음
+→ Kubernetes가 감지
+→ 새 pod 자동 생성
+
+
+또 사용자가 많아지면?
+
+
+backend 1개로 부족함
+→ backend를 3개로 늘림
+
+
+Kubernetes에서는 이런 식으로 가능해.
+
+
+replicas: 3
+
+
+그러면 백엔드가 3개 떠.
+
+또 배포할 때도 한 번에 다 꺼버리는 게 아니라:
+
+
+구버전 일부 유지
+신버전 일부 실행
+정상 확인
+점진적으로 교체
+
+
+이런 식으로 안정적으로 배포할 수 있어.
+
+즉 Kubernetes를 쓰는 이유는:
+
+
+자동 재시작
+자동 확장
+무중단 배포
+리소스 제한
+서비스 연결 관리
+운영 안정성
+
+
+때문이야.
+
+---
+
+## 7. Pod는 뭐냐?
+
+Pod는 Kubernetes에서 가장 기본이 되는 실행 단위야.
+
+Docker에서는 실행 단위가 컨테이너잖아?
+
+
+Docker의 실행 단위 = container
+
+
+Kubernetes에서는 컨테이너를 직접 하나씩 관리하지 않고, 보통 Pod라는 껍데기로 감싸서 관리해.
+
+
+Kubernetes의 실행 단위 = pod
+
+
+Pod 안에는 컨테이너가 1개 또는 여러 개 들어갈 수 있어.
+
+대부분은 이렇게 씀.
+
+
+Pod 1개 안에 컨테이너 1개
+
+
+예를 들면:
+
+
+backend pod
+└── FastAPI container
+
+frontend pod
+└── Streamlit container
+
+nginx pod
+└── Nginx container
+
+postgres pod
+└── PostgreSQL container
+
+
+즉 Pod는:
+
+
+Kubernetes가 컨테이너를 관리하기 위해 감싸는 실행 단위
+
+
+라고 보면 돼.
+
+---
+
+## 8. Pod와 Container의 차이
+
+쉽게 비교하면:
+
+
+Container
+→ 실제 프로그램이 실행되는 박스
+
+Pod
+→ Kubernetes가 관리하는 실행 단위
+→ 안에 container가 들어 있음
+
+
+비유하면:
+
+
+컨테이너 = 사람
+Pod = 방
+Kubernetes = 건물 관리자
+
+
+Kubernetes는 사람을 직접 하나하나 관리한다기보다, 방 단위로 배치하고 관리하는 느낌이야.
+
+---
+
+## 9. Pod를 왜 나눴냐?
+
+너희 프로젝트에서는 역할이 다르기 때문에 Pod를 나누는 게 맞아.
+
+
+backend pod
+→ FastAPI API 서버
+
+frontend pod
+→ Streamlit 대시보드
+
+nginx pod
+→ 외부 요청 분배
+
+postgres pod
+→ DB 저장소
+
+
+이걸 하나의 Pod에 다 넣으면 어떻게 되냐?
+
+
+backend 문제 생김
+→ frontend, nginx, db까지 영향 받을 수 있음
+
+frontend만 수정하고 싶은데
+→ 전체를 다시 배포해야 할 수 있음
+
+backend만 2개로 늘리고 싶은데
+→ 전체를 같이 늘려야 함
+
+
+그래서 나눠.
+
+나누면 좋은 점:
+
+
+backend만 재시작 가능
+frontend만 업데이트 가능
+backend만 여러 개로 확장 가능
+postgres는 1개만 유지 가능
+nginx만 따로 관리 가능
+
+
+예를 들어 백엔드는 사용자가 많으면 여러 개 띄울 수 있어.
+
+
+backend pod 1개 → 2개 → 3개
+
+
+하지만 DB는 함부로 여러 개 띄우면 데이터 꼬일 수 있으니까 보통 1개로 둬.
+
+
+postgres pod = 1개
+
+
+즉 Pod를 나눈 이유는:
+
+
+각 기능을 독립적으로 실행, 재시작, 확장, 배포하기 위해서
+
+
+야.
+
+---
+
+## 10. Kubernetes에서 Deployment는 뭐냐?
+
+Pod를 직접 하나하나 만들 수도 있지만, 보통은 Deployment가 Pod를 관리해.
+
+
+Deployment
+→ Pod를 몇 개 유지할지 관리하는 설정
+
+
+예를 들어:
+
+yaml
+replicas: 2
+
+
+라고 하면 Kubernetes는:
+
+
+backend pod를 항상 2개 유지해라
+
+
+라고 이해함.
+
+만약 하나가 죽으면?
+
+
+현재 backend pod 1개
+원래 목표 2개
+→ Kubernetes가 하나 더 생성
+
+
+그래서 Deployment는:
+
+
+Pod 관리자
+
+
+라고 보면 돼.
+
+---
+
+## 11. Kubernetes에서 Service는 뭐냐?
+
+Pod는 죽었다 살아날 수 있어.  
+그러면 IP도 바뀔 수 있어.
+
+그럼 다른 서비스가 backend pod에 어떻게 접속하냐?
+
+그래서 Service가 있어.
+
+
+Service
+→ Pod 앞에 붙는 고정 주소
+
+
+예를 들어 backend pod가 여러 개 있어도:
+
+
+backend-service
+
+
+라는 이름으로 접근할 수 있게 해줘.
+
+즉 Service는:
+
+
+Pod들의 고정 출입구
+
+
+야.
+
+---
+
+## 12. Kubernetes에서 ConfigMap과 Secret은 뭐냐?
+
+프로그램에는 설정값이 필요해.
+
+예를 들어:
+
+
+DATABASE_URL
+DB 이름
+DB 사용자명
+API 주소
+
+
+이런 건 ConfigMap에 넣을 수 있어.
+
+
+ConfigMap
+→ 일반 설정값 저장
+
+
+비밀번호 같은 민감한 값은 Secret에 넣어.
+
+
+Secret
+→ 비밀번호, 토큰 같은 민감정보 저장
+
+
+너희 프로젝트에서는 DB 비밀번호 같은 게 Secret으로 분리될 수 있어.
+
+---
+
+## 13. Kubernetes는 너희 프로젝트 어디에 쓰냐?
+
+현재 네가 실제로 실행한 건:
+
+powershell
+docker compose up --build
+
+
+이거지?
+
+이건 Kubernetes가 아니라 Docker Compose로 실행한 거야.
+
+즉 현재 로컬 실행은:
+
+
+Docker Compose 기반
+
+
+그리고 Kubernetes는:
+
+
+클라우드/운영 환경으로 확장할 때 쓰는 설계
+
+
+라고 보면 돼.
+
+발표에서 말하면 이렇게 하면 돼.
+
+> 로컬 개발 및 시연 환경에서는 Docker Compose를 사용해 PostgreSQL, FastAPI, Streamlit, Nginx를 한 번에 실행합니다. 이후 운영 환경 확장을 고려해 Kubernetes 배포 파일을 구성했으며, 각 서비스를 Pod 단위로 분리하여 장애 발생 시 자동 재시작, 독립 배포, 리소스 제한, 확장성을 확보할 수 있도록 설계했습니다.
+
+---
+
+## 14. Docker Compose와 Kubernetes 차이
+
+둘 다 여러 컨테이너를 실행한다는 점에서는 비슷해.
+
+하지만 목적이 달라.
+
+| 구분 | Docker Compose | Kubernetes |
+|---|---|---|
+| 주 용도 | 로컬 개발, 작은 서버 | 운영/클라우드/대규모 |
+| 실행 범위 | 보통 서버 1대 | 서버 여러 대 가능 |
+| 설정 파일 | docker-compose.yml | deployment, service, configmap 등 |
+| 자동 복구 | 제한적 | 강함 |
+| 확장 | 간단한 수준 | 본격적인 자동 확장 |
+| 배포 관리 | 단순 실행 | 롤링 업데이트, 헬스체크 |
+| 난이도 | 쉬움 | 어려움 |
+
+쉽게 말하면:
+
+
+Docker Compose
+→ 개발할 때 편하게 전체 실행
+
+Kubernetes
+→ 실제 운영할 때 안정적으로 관리
+
+
+---
+
+## 15. 이 프로젝트에서 Docker Compose가 하는 일
+
+너희 프로젝트의 `docker-compose.yml`은 이런 일을 해.
+
+
+1. PostgreSQL 컨테이너 실행
+2. FastAPI backend 컨테이너 빌드 후 실행
+3. Streamlit frontend 컨테이너 빌드 후 실행
+4. Nginx 컨테이너 빌드 후 실행
+5. 네 컨테이너를 같은 네트워크에 연결
+6. PostgreSQL 데이터를 volume에 저장
+7. backend가 DB에 접속할 수 있도록 DATABASE_URL 설정
+8. frontend가 backend에 접속할 수 있도록 API_URL 설정
+9. localhost:80으로 nginx 노출
+
+
+그래서 네가 브라우저에서:
+
+
+http://localhost
+
+
+로 접속하면 Nginx가 받아.
+
+그리고:
+
+
+/ 요청 → frontend
+/api 요청 → backend
+
+
+로 나눠.
+
+---
+
+## 16. PostgreSQL 데이터는 어디에 저장되냐?
+
+Docker 컨테이너는 원래 지우면 내부 데이터도 날아갈 수 있어.
+
+그래서 volume을 써.
+
+너희 프로젝트에는 이런 설정이 있어.
+
+
+pdfs_pg_data
+
+
+이건 PostgreSQL 데이터를 저장하는 Docker volume이야.
+
+그래서 컨테이너를 껐다 켜도 DB 데이터가 남아 있을 수 있어.
+
+
+PostgreSQL container 삭제
+→ volume 남아 있으면 데이터 유지
+
+
+완전히 지우려면:
+
+powershell
+docker compose down -v
+
+
+를 해야 해.
+
+`-v`는 volume까지 지우라는 뜻이야.
+
+---
+
+## 17. 왜 Nginx까지 쓰냐?
+
+Nginx는 앞문 역할이야.
+
+원래는 각각 포트가 달라.
+
+
+FastAPI backend → 8010
+Streamlit frontend → 8501
+PostgreSQL → 5432
+
+
+사용자가 이렇게 접속하면 복잡해.
+
+
+화면은 localhost:8501
+API는 localhost:8010
+
+
+그래서 Nginx가 앞에서 하나로 합쳐줘.
+
+
+사용자 접속 주소: http://localhost
+
+
+그리고 내부적으로 나눠.
+
+
+http://localhost/
+→ frontend
+
+http://localhost/api/
+→ backend
+
+
+이게 reverse proxy 역할이야.
+
+---
+
+## 18. 발표에서 Kubernetes를 어떻게 설명하면 되냐?
+
+너무 어렵게 말하지 말고 이렇게 말하면 돼.
+
+> Docker Compose는 로컬 환경에서 여러 컨테이너를 한 번에 실행하기 위해 사용했습니다. PostgreSQL, FastAPI, Streamlit, Nginx가 각각 컨테이너로 실행되며, 별도 설치 없이 동일한 환경을 재현할 수 있습니다.
+
+> Kubernetes는 운영 환경 확장을 고려한 배포 구조입니다. 각 기능을 backend, frontend, nginx, postgres Pod로 분리하여 장애 발생 시 자동 재시작, 서비스별 독립 배포, 리소스 제한, 확장성을 확보할 수 있도록 설계했습니다.
+
+> Pod는 Kubernetes에서 컨테이너를 실행하는 최소 단위입니다. 본 프로젝트에서는 FastAPI, Streamlit, Nginx, PostgreSQL의 역할이 다르기 때문에 각각 별도의 Pod로 분리했습니다.
+
+이 정도면 충분히 좋음.
+
+---
+
+## 19. 아주 쉽게 한 번에 비유하면
+
+
+Docker
+= 프로그램 하나를 포장해서 어디서든 실행 가능하게 만드는 상자
+
+Docker Compose
+= 여러 상자를 한 번에 켜는 조립 설명서
+
+PostgreSQL Container
+= DB를 내 컴퓨터에 설치하지 않고 Docker 안에서 실행한 것
+
+Kubernetes
+= 여러 서버에서 수많은 컨테이너를 안정적으로 관리하는 운영 관리자
+
+Pod
+= Kubernetes가 컨테이너를 담아서 실행하는 최소 단위
+
+Nginx
+= 외부 요청을 받아 frontend/backend로 나눠주는 입구
+
+
+---
+
+## 20. 네 프로젝트 기준 최종 그림
+
+
+[로컬 실행]
+docker compose up --build
+    ↓
+PostgreSQL container
+FastAPI backend container
+Streamlit frontend container
+Nginx container
+    ↓
+사용자 접속: http://localhost
+
+
+
+[확장 운영 설계]
+Kubernetes
+    ↓
+postgres pod
+backend pod
+frontend pod
+nginx pod
+    ↓
+각 Pod 상태 감시
+죽으면 재시작
+필요하면 확장
+리소스 제한
+서비스 연결 관리
+
+
+결론:
+
+
+너희가 지금 실제로 시연하는 건 Docker Compose 기반.
+Kubernetes는 “이 구조를 실무 운영 환경으로 확장하면 이렇게 관리할 수 있다”를 보여주는 확장 아키텍처.
+PostgreSQL은 직접 설치한 게 아니라 Docker 컨테이너 안에서 실행 중.
+Pod는 Kubernetes에서 컨테이너를 실행하고 관리하는 기본 단위.

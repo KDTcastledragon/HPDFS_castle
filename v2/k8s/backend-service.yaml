@@ -1,0 +1,13 @@
+# kubernetes service란? Pod들의 고정 출입구
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: pdfs
+spec:
+  selector:
+    app: backend
+  ports:
+    - port: 8010
+      targetPort: 8010
