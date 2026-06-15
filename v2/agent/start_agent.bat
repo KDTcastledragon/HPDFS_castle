@@ -1,12 +1,21 @@
+REM 배치 파일에서 실행되는 명령어 자체를 화면에 계속 출력하지 않게 하는 옵션. 없으면 지저분하게 나옴.
+REM 명령어는 숨기고, echo로 출력한 문장만 깔끔하게 보여준다.
+
 @echo off
-title PDFS Agent
+title PDFS Agent REM title : CMD 창 제목을 PDFS Agent로 바꾸는 명령어. echo. 는 빈 줄 출력.
 echo ============================================================
 echo  PDFS 에이전트 시작
 echo  종료하려면 이 창을 닫거나 Ctrl+C 를 누르세요.
 echo ============================================================
 echo.
 
-cd /d "%~dp0"
-python agent.py
+cd /d "%~dp0" 
+REM 배치 파일이 있는 폴더로 이동하라는 뜻. %~dp0 : 현재 배치 파일이 있는 드라이브와 폴더 경로.
+REM /d : 드라이브까지 바꿔서 이동 하라. 즉, 드라이브가 달라도 해당 폴더로 이동해라. 배치 파일이 있는 폴더, 즉 agent.py가 있는 폴더로 이동해라.
+REM %0 : 현재 실행 중인 배치 파일 자기 자신을 의미하며, 이 파일의 경로를 가리킨다.
 
-pause
+python agent.py REM Python Interpreter로 agent.py를 실행하라.
+
+pause REM pause : CMD 창을 바로 닫지 않고 멈춰두는 명령어.
+REM 왜 필요하냐? 만약 agent.py가 에러로 바로 종료되면, pause가 없을 경우 창이 순식간에 닫혀서 에러 메시지를 못 봄. 
+REM pause가 있으면 창이 멈춰 있어서, 에러확인 가능.
