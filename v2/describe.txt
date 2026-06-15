@@ -1,7 +1,7 @@
 # 파일 및 메소드 흐름 summary
 
 1. start_agent.bat
-→ python agent.py
+→ agent.py
 
 2. agent.py
 → 2-1. if __name__ == "__main__"

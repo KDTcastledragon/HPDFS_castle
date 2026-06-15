@@ -13,7 +13,7 @@ data/current_storage_input.csv
 !backend/models/storage_best_model.pkl
 
 # smartctl 바이너리 (Windows 실행 파일)
-tools/
+# tools/ --> 이 폴더 하위의 smartctl.exe가 있어야 정보수집 가능. ignore에서 주석처리하여 제외.
 
 # 파이썬
 __pycache__/

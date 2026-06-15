@@ -2,7 +2,7 @@
 
 # <참고>
 # start_agent.bat : 현재 폴더에서 agent.py를 Python으로 실행해라
-# 그냥 agent.py를 쉽게 실행해주는 실행 버튼 같은 역할이야.
+# 그냥 agent.py를 쉽게 실행해주는 실행 버튼 같은 역할에 불과함.
 
 from __future__ import annotations
 
